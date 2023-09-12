@@ -2,7 +2,9 @@
   "name": "hardhat-project",
   "scripts": {
     "compile": "npx hardhat compile",
-    "deploy": "npx hardhat deploy-zksync --script deployZKProfile.ts --network test"
+    "deploy": "npx hardhat deploy-zksync --script deployZKProfile.ts --network test",
+    "deployZKID": "npx hardhat deploy-zksync --script deployZKID.ts --network test",
+    "pushZKProof": "npx hardhat deploy-zksync --script pushZKProof.ts --network test"
   },
   "devDependencies": {
     "@matterlabs/hardhat-zksync-solc": "^0.3.17",

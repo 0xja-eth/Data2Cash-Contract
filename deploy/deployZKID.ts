@@ -14,26 +14,17 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   const [hydraS1Verifier, isNew1] = await makeContract("HydraS1Verifier");
 
-  const [zkProfile, isNew2] = await makeContract("ZKProfile", isNew1);
-  // const [proxy] = await makeContract("ZKProfileProxy", [
-  //   zkProfile.address, "0x" // callCode
-  // ], isNew2);
-
-  // const zkProfileProxy = await getContract("ZKProfile","ZKProfileProxy");
-
-  const gov = await zkProfile.gov();
-  console.log("gov", gov);
-
-  await sendTx(zkProfile.initialize(
+  const [zkid] = await makeContract("ZKID", [
     hydraS1Verifier.address,
+    "ZKProfile", "ZKP",
     "ZK Profile on Data2.cash",
     "https://contri.build/img/contri-img.png",
     "https://contri.build/img/contri-img.png"
-  ), "zkProfile.initialize")
+  ]);
 
-  const description = await zkProfile.description()
-  const imageUrl = await zkProfile.imageUrl()
-  const externalUrl = await zkProfile.externalUrl()
+  const description = await zkid.description()
+  const imageUrl = await zkid.imageUrl()
+  const externalUrl = await zkid.externalUrl()
 
   console.log("info", {description, imageUrl, externalUrl})
 
