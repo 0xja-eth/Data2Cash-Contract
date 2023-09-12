@@ -1,17 +1,39 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import dotenv from "dotenv"
-import {deployContract, getContract, makeContract, setupHRE} from "../utils/contract";
+import {deployContract, getContract, mainWallet, makeContract, sendTx, setupHRE} from "../utils/contract";
 
 dotenv.config();
 
 export default async function (hre: HardhatRuntimeEnvironment) {
   setupHRE(hre);
 
-  const [zkProfile, isNew] = await makeContract("ZKProfile");
-  const [proxy] = await makeContract("ZKProfileProxy", [zkProfile.address, "0x"], isNew);
+  // const address = mainWallet().address
+
+  // const initializeCode = "0x8129fc1c"
+  // const callCode = `${initializeCode}${address}`
+
+  const [hydraS1Verifier, isNew1] = await makeContract("HydraS1Verifier");
+
+  const [zkProfile, isNew2] = await makeContract("ZKProfile", isNew1);
+  const [proxy] = await makeContract("ZKProfileProxy", [
+    zkProfile.address, "0x" // callCode
+  ], isNew2);
 
   const zkProfileProxy = await getContract("ZKProfile","ZKProfileProxy");
 
   const gov = await zkProfileProxy.gov();
   console.log("GOV", gov);
+
+  const description = await zkProfileProxy.description()
+  const imageUrl = await zkProfileProxy.imageUrl()
+  const externalUrl = await zkProfileProxy.externalUrl()
+
+  console.log("info", {description, imageUrl, externalUrl})
+
+  // await sendTx(zkProfileProxy.initialize(
+  //   hydraS1Verifier.address,
+  //   "ZK Profile on Data2.cash",
+  //   "https://contri.build/img/contri-img.png",
+  //   "https://contri.build/img/contri-img.png"
+  // ), "zkProfileProxy.initialize")
 }

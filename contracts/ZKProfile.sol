@@ -5,7 +5,7 @@ import "./IHydraS1Verifier.sol";
 import "./EditionMetadataRenderer.sol";
 import "./Governable.sol";
 
-contract ZKProfile is ERC721, EditionMetadataRenderer, Governable {
+contract ZKProfile is Governable, ERC721, EditionMetadataRenderer {
 
   bool public initialized = false;
 
@@ -32,9 +32,9 @@ contract ZKProfile is ERC721, EditionMetadataRenderer, Governable {
     uint[5] input
   );
 
-  constructor() ERC721("ZKProfile", "ZKP") Governable() { }
+  constructor() Governable() ERC721("ZKProfile", "ZKP") { }
 
-  modifier onlyNotInitialized() {
+  modifier beforeInitialized() {
     require(!initialized, "ZKProfile: already initialized");
     _;
   }
@@ -43,7 +43,7 @@ contract ZKProfile is ERC721, EditionMetadataRenderer, Governable {
     address hydraS1Verifier_,
     string memory _description,
     string memory _imageUrl,
-    string memory _externalUrl) external onlyNotInitialized onlyGov {
+    string memory _externalUrl) external beforeInitialized onlyGov {
     hydraS1Verifier = IHydraS1Verifier(hydraS1Verifier_);
 
     description = _description;
@@ -51,6 +51,16 @@ contract ZKProfile is ERC721, EditionMetadataRenderer, Governable {
     externalUrl = _externalUrl;
 
     initialized = true;
+  }
+
+  function changeInfo(
+    string memory _description,
+    string memory _imageUrl,
+    string memory _externalUrl) external onlyGov {
+
+    description = _description;
+    imageUrl = _imageUrl;
+    externalUrl = _externalUrl;
   }
 
   // Create a new NFT
