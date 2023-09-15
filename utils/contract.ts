@@ -71,13 +71,16 @@ export function saveAddress(chainId: number, name: string, address: string) {
   saveContractCache();
 }
 export function saveContractCache() {
-  fs.writeFileSync(ContractCacheFile, JSON.stringify(_contractData))
+  fs.writeFileSync(ContractCacheFile, JSON.stringify(_contractData, undefined, 2))
 }
 
 // endregion
 
+const DefaultConfirmations = 2;
+
 export async function deployContract(
-  name: string, args: any[] = [], cacheName?: string, label?: string): Promise<Contract> {
+  name: string, args: any[] = [], cacheName?: string,
+  label?: string, confirmations = DefaultConfirmations): Promise<Contract> {
   cacheName ||= name;
 
   const artifact = isZKSync && await deployer.loadArtifact(name);
@@ -92,6 +95,7 @@ export async function deployContract(
       res = isZKSync ?
         await deployer.deploy(artifact, args) :
         await hre.ethers.deployContract(name, args, mainWallet() as Wallet);
+      await res.deployTransaction.wait(confirmations)
       break;
     } catch (e) {
       console.error("... Error!", e);
@@ -196,9 +200,33 @@ export async function ifContract(
   ))).every(r => r);
 }
 
+export async function call<T>(
+  txPromise: Promise<T> | (() => Promise<T>), label?: string) {
+  if (txPromise instanceof Function) {
+    let cnt = 0;
+    while (true) {
+      try {
+        return await call(txPromise(), label);
+      } catch (e) {
+        console.error("... Error!", e);
+        if (++cnt < RetryCount)
+          console.info(`Retrying... (${cnt}/${RetryCount})`);
+        else {
+          console.error(`No retry count! Transaction is failed!`);
+          throw e;
+        }
+      }
+    }
+  } else {
+    console.info(`Calling ${label}...`)
+    const res = await txPromise;
+    console.info(`... Called! ${res}`)
+    return res
+  }
+}
 export async function sendTx(
   txPromise: Promise<TransactionResponse> | (() => Promise<TransactionResponse>),
-  label?: string, confirmations = 2) {
+  label?: string, confirmations = DefaultConfirmations) {
   if (txPromise instanceof Function) {
     let cnt = 0;
     while (true) {
