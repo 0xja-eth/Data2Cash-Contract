@@ -1,11 +1,13 @@
 import {Deployer} from "@matterlabs/hardhat-zksync-deploy";
-import {Contract, Provider, Wallet} from "zksync-web3";
+import {Contract as ZKContract, Provider, Wallet as ZKWallet} from "zksync-web3";
 import {TransactionResponse} from "@ethersproject/abstract-provider";
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {getContractFactory} from "@nomiclabs/hardhat-ethers/types";
 import * as fs from "fs";
 
 import dotenv from "dotenv"
+import {ethers} from "hardhat";
+import {Contract, providers, Wallet} from "ethers";
 
 dotenv.config();
 
@@ -13,21 +15,28 @@ const RetryCount = 15;
 
 // region HRE环境初始化
 export let hre: HardhatRuntimeEnvironment
-export let wallets: Wallet[] = []
+export let wallets: ZKWallet[] | Wallet[] = []
 export let deployer: Deployer
-export let provider: Provider
+export let provider: Provider | providers.Provider
+export let isZKSync = false;
 
 export function chainId() { return hre.network.config.chainId }
-export function mainWallet() { return wallets[0] }
+export function mainWallet(): ZKWallet | Wallet { return wallets[0] }
 export function walletAddresses() { return wallets.map(w => w.address) }
 
 export function setupHRE(_hre: HardhatRuntimeEnvironment) {
   hre = _hre;
-  provider = new Provider(hre.network.config["url"])
-  if (hre.network.config.accounts instanceof Array)
-    wallets = hre.network.config.accounts.map(a => new Wallet(a, provider));
+  if (isZKSync = _hre.network.config.zksync) { // ZKSync逻辑
+    provider = new Provider({url: hre.network.config["url"], timeout: 6000000})
+    if (hre.network.config.accounts instanceof Array)
+      wallets = hre.network.config.accounts.map(a => new ZKWallet(a, provider as Provider));
 
-  if (mainWallet()) deployer = new Deployer(hre, mainWallet());
+    if (mainWallet()) deployer = new Deployer(hre, mainWallet() as ZKWallet);
+  } else {
+    provider = ethers.provider;
+    if (hre.network.config.accounts instanceof Array)
+      wallets = hre.network.config.accounts.map(a => new Wallet(a, provider))
+  }
 }
 
 // endregion
@@ -69,8 +78,9 @@ export function saveContractCache() {
 
 export async function deployContract(
   name: string, args: any[] = [], cacheName?: string, label?: string): Promise<Contract> {
-  const artifact = await deployer.loadArtifact(name);
   cacheName ||= name;
+
+  const artifact = isZKSync && await deployer.loadArtifact(name);
 
   const info = label ? `${name}: ${label}` : name;
   const argStr = args.map(a => a.toString()).join(",") || "no args";
@@ -79,7 +89,9 @@ export async function deployContract(
   let cnt = 0, res: Contract;
   while (true) {
     try {
-      res = await deployer.deploy(artifact, args);
+      res = isZKSync ?
+        await deployer.deploy(artifact, args) :
+        await hre.ethers.deployContract(name, args, mainWallet() as Wallet);
       break;
     } catch (e) {
       console.error("... Error!", e);

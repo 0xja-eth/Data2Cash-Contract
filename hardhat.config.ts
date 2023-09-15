@@ -7,9 +7,22 @@ import "@typechain/hardhat";
 
 import "hardhat-preprocessor";
 import * as fs from "fs";
+import path from "path";
 import dotenv from "dotenv"
 
-dotenv.config();
+// 先构造出.env*文件的绝对路径
+const appDirectory = fs.realpathSync(process.cwd());
+const resolveApp = (relativePath) => path.resolve(appDirectory, relativePath);
+const pathsDotenv = resolveApp(".env");
+
+const rootEnvChain = process.env.CHAIN
+
+dotenv.config({ path: `${pathsDotenv}` })
+
+const envChain = rootEnvChain || process.env.CHAIN
+const chainDotenv = resolveApp(`env/${envChain}.env`);
+
+dotenv.config({ path: `${chainDotenv}` })
 
 function getRemappings() {
   return fs
@@ -24,7 +37,7 @@ const config: HardhatUserConfig = {
     timeout: 120000,
   },
 
-  zksolc: {
+  zksolc: process.env.IS_ZKSYNC ? {
     version: "1.3.10",
     compilerSource: "binary",
     settings: {
@@ -38,7 +51,7 @@ const config: HardhatUserConfig = {
         mode: '3' // optional. 3 by default, z to optimize bytecode size
       }
     }
-  },
+  } : undefined,
 
   solidity: {
     version: "0.8.12",
@@ -50,33 +63,32 @@ const config: HardhatUserConfig = {
     }
   },
 
-  defaultNetwork: "dev",
+  defaultNetwork: process.env.DEFAULT_ENV || "dev",
   networks: {
     // hardhat: {
     // },
     dev: {
-      chainId: 270,
+      chainId: Number(process.env.DEVNET_CHAIN_ID),
       url: process.env.DEVNET_RPC_URL, // The testnet RPC URL of zkSync Era network.
       accounts: [process.env.DEVNET_PRIVATE_KEY || process.env.PRIVATE_KEY],
       ethNetwork: process.env.DEVNET_ETH_NETWORK,
-      zksync: true,
+      zksync: process.env.IS_ZKSYNC?.toLowerCase() == "true",
       allowUnlimitedContractSize: true
     },
     test: {
-      chainId: 280,
+      chainId: Number(process.env.TESTNET_CHAIN_ID),
       url: process.env.TESTNET_RPC_URL,
       accounts: [process.env.TESTNET_PRIVATE_KEY || process.env.PRIVATE_KEY],
       ethNetwork: process.env.TESTNET_ETH_NETWORK,
-      zksync: true,
+      zksync: process.env.IS_ZKSYNC?.toLowerCase() == "true",
       verifyURL: process.env.TESTNET_VERIFY_URL
     },
     main: {
-      chainId: 324,
+      chainId: Number(process.env.MAINNET_CHAIN_ID),
       url: process.env.MAINNET_RPC_URL,
       accounts: [process.env.MAINNET_PRIVATE_KEY || process.env.PRIVATE_KEY],
       ethNetwork: process.env.MAINNET_ETH_NETWORK,
-      zksync: true,
-      // Verification endpoint for Goerli
+      zksync: process.env.IS_ZKSYNC?.toLowerCase() == "true",
       verifyURL: process.env.MAINNET_VERIFY_URL
     }
   },

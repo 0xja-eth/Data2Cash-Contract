@@ -37,26 +37,24 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   }
   const snarkProofArr = [snarkProof.a, snarkProof.b, snarkProof.c, snarkProof.input]
 
-  // const zkProfile = await getContract("ZKProfile");
+  const [hydraS1Verifier] = await makeContract("HydraS1Verifier");
 
-  // await sendTx(zkProfile.pushZKProof(...snarkProofArr, {gasLimit: 100000000}), "zkProfileProxy.pushZKProof")
-  //
-  // const supply = await zkProfile.supply()
-  // const tokenId = await zkProfile.getTokenIdByAddress(mintTo)
-  //
-  // console.log("stat", {supply, tokenId})
+  // const testAddition = await hydraS1Verifier.testAddition();
+  // console.log("testAddition", testAddition)
 
-  const hydraS1Verifier = await getContract("HydraS1Verifier");
+  // const testScalarMul = await hydraS1Verifier.testScalarMul();
+  // console.log("testScalarMul", testScalarMul)
+  //
+  // const verifyingKey = await hydraS1Verifier.verifyingKey();
+  // console.log("verifyingKey", verifyingKey)
+  //
+  // const inputs = await hydraS1Verifier.makeInputValues(...snarkProofArr)
+  // console.log("inputs", inputs)
+  //
+  // const fakeVerify = await hydraS1Verifier.fakeVerifyProof(...snarkProofArr)
+  // console.log("fakeVerify", fakeVerify)
 
   const isVerified = await hydraS1Verifier.verifyProof(...snarkProofArr)
   console.log("isVerified", isVerified)
 
-  const zkid = await getContract("ZKID");
-
-  await sendTx(zkid.createCredential(...snarkProofArr), "zkid.createCredential")
-
-  // const supply = await zkid.supply()
-  const tokenId = await zkid.getTokenIdByAddress(mintTo)
-
-  console.log("stat", {tokenId})
 }

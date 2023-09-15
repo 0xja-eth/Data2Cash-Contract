@@ -2,9 +2,13 @@
   "name": "hardhat-project",
   "scripts": {
     "compile": "npx hardhat compile",
-    "deploy": "npx hardhat deploy-zksync --script deployZKProfile.ts --network test",
-    "deployZKID": "npx hardhat deploy-zksync --script deployZKID.ts --network test",
-    "pushZKProof": "npx hardhat deploy-zksync --script pushZKProof.ts --network test"
+    "deploy": "npx hardhat run scripts/deployZKProfile.ts --no-compile",
+    "push-zkproof": "npx hardhat run scripts/pushZKProof.ts --no-compile",
+    "test-verifier": "npx hardhat run scripts/testVerifier.ts --no-compile",
+    "zksync-deploy": "set CHAIN=zksync&npx hardhat deploy-zksync --script deployZKProfile.ts",
+    "zksync-deploy-zkid": "set CHAIN=zksync&npx hardhat deploy-zksync --script deployZKID.ts",
+    "zksync-push-zkproof": "set CHAIN=zksync&npx hardhat deploy-zksync --script pushZKProof.ts",
+    "zksync-test-verifier": "set CHAIN=zksync&npx hardhat deploy-zksync --script testVerifier.ts"
   },
   "devDependencies": {
     "@matterlabs/hardhat-zksync-solc": "^0.3.17",
@@ -34,7 +38,6 @@
     "typescript": ">=4.5.0"
   },
   "dependencies": {
-    "dotenv": "^16.3.1",
     "@api3/contracts": "^0.10.0",
     "@matterlabs/hardhat-zksync-chai-matchers": "^0.1.3",
     "@matterlabs/hardhat-zksync-deploy": "^0.6.3",
@@ -42,7 +45,9 @@
     "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@pythnetwork/pyth-evm-js": "^1.17.0",
     "@pythnetwork/pyth-sdk-solidity": "^2.2.1",
+    "dotenv": "^16.3.1",
     "ethereum-waffle": "^4.0.10",
+    "web3": "^4.1.1",
     "zksync-web3": "^0.14.3"
   }
 }
