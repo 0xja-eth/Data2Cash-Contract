@@ -69,7 +69,7 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer {
     uint[2][2] memory b,
     uint[2] memory c,
     uint[5] memory input
-  ) external {
+  ) public {
     // check proof
     require(!isNullifierExpired[input[4]], "Invalid Nullifier");
     require(hydraS1Verifier.verifyProof(a, b, c, input), "Invalid Proof");
@@ -100,6 +100,18 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer {
     isNullifierExpired[input[4]] = true;
 
     emit ZKProof(mintTo, a, b, c, input);
+  }
+  function pushZKProofs(
+    uint[2][] memory a,
+    uint[2][2][] memory b,
+    uint[2][] memory c,
+    uint[5][] memory input
+  ) external {
+    uint256 length = input.length;
+    require(a.length == length && b.length == length && c.length == length, "Invalid length");
+
+    for (uint256 i = 0; i < length; i++)
+      pushZKProof(a[i], b[i], c[i], input[i]);
   }
 
   // Get the metadata of an NFT

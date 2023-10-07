@@ -7,12 +7,17 @@ dotenv.config();
 export default async function (hre: HardhatRuntimeEnvironment) {
   setupHRE(hre);
 
+  const forceDeplyZKProfile = true
+
   const [hydraS1Verifier, isNew1] = await makeContract("HydraS1Verifier");
 
-  const [zkProfile, isNew2] = await makeContract("ZKProfile", isNew1);
-  const [proxy] = await makeContract("ZKProfileProxy", [
+  const [zkProfile, isNew2] = await makeContract("ZKProfile", isNew1 || forceDeplyZKProfile);
+  const [proxy, isNew3] = await makeContract("ZKProfileProxy", [
     zkProfile.address, "0x" // callCode
-  ], isNew2);
+  ]);
+
+  if (!isNew3 && isNew2)
+    await sendTx(proxy.upgradeTo(zkProfile.address), "proxy.upgradeTo")
 
   const zkProfileProxy = await getContract("ZKProfile","ZKProfileProxy");
 
