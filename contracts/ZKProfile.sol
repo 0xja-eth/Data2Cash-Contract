@@ -4,8 +4,9 @@ import "../lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import "./IHydraS1Verifier.sol";
 import "./EditionMetadataRenderer.sol";
 import "./Governable.sol";
+import "./IZKProfile.sol";
 
-contract ZKProfile is Governable, ERC721, EditionMetadataRenderer {
+contract ZKProfile is Governable, ERC721, EditionMetadataRenderer, IZKProfile {
 
   bool public initialized = false;
 
@@ -24,6 +25,8 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer {
 
   // key: nullifier
   mapping (uint256 => bool) isNullifierExpired;
+
+  // key: tokenId
   mapping (uint256 => NFTMetadata) tokens;
 
   event ZKProof(
@@ -61,6 +64,31 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer {
     description = _description;
     imageUrl = _imageUrl;
     externalUrl = _externalUrl;
+  }
+
+  function getTokenIdsByCid(uint256 cid) public view returns (uint256[] memory) {
+    uint256[] memory tokenIds = new uint256[](supply); // 假设供应量是合约的状态变量
+    uint256 count = 0;
+
+    for (uint256 i = 0; i < supply; i++) {
+      if (tokens[i].cids.length > 0) {
+        for (uint256 j = 0; j < tokens[i].cids.length; j++) {
+          if (tokens[i].cids[j] == cid) {
+            tokenIds[count] = i;
+            count++;
+            break;
+          }
+        }
+      }
+    }
+
+    // 调整数组大小以匹配实际找到的tokenId数量
+    uint256[] memory result = new uint256[](count);
+    for (uint256 k = 0; k < count; k++) {
+      result[k] = tokenIds[k];
+    }
+
+    return result;
   }
 
   // Create a new NFT

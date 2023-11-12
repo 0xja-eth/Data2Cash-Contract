@@ -37,6 +37,7 @@ export function setupHRE(_hre: HardhatRuntimeEnvironment) {
     if (hre.network.config.accounts instanceof Array)
       wallets = hre.network.config.accounts.map(a => new Wallet(a, provider))
   }
+  console.log("mainWallet", mainWallet()?.address);
 }
 
 // endregion
