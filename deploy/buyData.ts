@@ -9,13 +9,13 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   setupHRE(hre);
 
   const cid = "7074046504243040256";
-  const value = BigNumber.from(20).mul(10e12);
+  const value = BigNumber.from(10).mul(10e14);
 
   const dataSwap = await getContract("DataSwap");
 
   await sendTx(dataSwap.buy(cid, {
     value,
-    gasPrice: 40*10e9,
-    gasLimit: 1000000
+    // gasPrice: 40*10e9,
+    // gasLimit: 1000000
   }), "dataSwap.buy")
 }
