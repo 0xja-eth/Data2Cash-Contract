@@ -51,12 +51,12 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const isVerified = await hydraS1Verifier.verifyProof(...snarkProofArr)
   console.log("isVerified", isVerified)
 
-  const zkid = await getContract("ZKID");
+  const zkProfileProxy = await getContract("ZKProfile","ZKProfileProxy");
 
-  await sendTx(zkid.createCredential(...snarkProofArr), "zkid.createCredential")
+  await sendTx(zkProfileProxy.pushZKProof(...snarkProofArr), "zkProfileProxy.pushZKProof")
 
   // const supply = await zkid.supply()
-  const tokenId = await zkid.getTokenIdByAddress(mintTo)
+  const tokenId = await zkProfileProxy.getTokenIdByAddress(mintTo)
 
   console.log("stat", {tokenId})
 }
