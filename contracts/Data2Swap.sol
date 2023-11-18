@@ -53,7 +53,7 @@ contract Data2Swap is Governable {
       _addresses[i].transfer(benefit);
   }
 
-  function getKey(uint256[] memory _tagIds) public view returns (bytes32) {
+  function getKey(uint256[] memory _tagIds) public pure returns (bytes32) {
     return keccak256(abi.encodePacked(_tagIds));
   }
   function getPrice(bytes32 _key) public view returns (uint256) {

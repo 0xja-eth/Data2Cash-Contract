@@ -26,7 +26,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   await call(() => zkProfileProxy.gov(), "gov");
 
-  if (isNew2)
+  if (isNew3)
     await sendTx(zkProfileProxy.initialize(
       hydraS1Verifier.address,
       "ZK Profile on Data2.cash",
@@ -34,9 +34,9 @@ export default async function (hre: HardhatRuntimeEnvironment) {
       "https://contri.build/img/contri-img.png"
     ), "zkProfile.initialize")
 
-  const description = await call(zkProfileProxy.description())
-  const imageUrl = await call(zkProfileProxy.imageUrl())
-  const externalUrl = await call(zkProfileProxy.externalUrl())
+  const description = await call(zkProfileProxy.description(), "description")
+  const imageUrl = await call(zkProfileProxy.imageUrl(), "imageUrl")
+  const externalUrl = await call(zkProfileProxy.externalUrl(), "externalUrl")
 
   console.log("info", {description, imageUrl, externalUrl})
 }

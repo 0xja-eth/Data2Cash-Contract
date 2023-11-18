@@ -4,7 +4,7 @@ import "./Governable.sol";
 import "./IZKProfile.sol";
 import "../lib/openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
 
-contract Data2Swap is ERC1155, Governable {
+contract Data2SwapERC1155 is ERC1155, Governable {
 
   IZKProfile public zkProfile;
 
@@ -63,7 +63,7 @@ contract Data2Swap is ERC1155, Governable {
 //  function getKey(uint256[] memory _tagIds) public view returns (bytes32) {
 //    return keccak256(abi.encodePacked(_tagIds));
 //  }
-  function getKey(uint256[] memory _tagIds) public view returns (uint256) {
+  function getKey(uint256[] memory _tagIds) public pure returns (uint256) {
     return uint256(keccak256(abi.encodePacked(_tagIds)));
   }
   function getPrice(uint256 _key) public view returns (uint256) {

@@ -29,9 +29,8 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer, IZKProfile {
   uint256 public supply;
 
   event ZKProof(
-    address indexed _to,
-    uint[2] _a, uint[2][2] _b, uint[2] _c,
-    uint[5] _input
+    address indexed _to, uint[2] _a, uint[4] _b, uint[2] _c,
+    uint _dest, uint _pubKey1, uint _pubKey2, uint indexed _tagId, uint _nullifier
   );
 
   constructor() Governable() ERC721("ZKProfile", "ZKP") { }
@@ -125,7 +124,10 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer, IZKProfile {
 
     isNullifierExpired[_input[4]] = true;
 
-    emit ZKProof(mintTo, _a, _b, _c, _input);
+    uint[4] memory _bb = [_b[0][0], _b[0][1], _b[1][0], _b[1][1]];
+
+    emit ZKProof(mintTo, _a, _bb, _c,
+      _input[0], _input[1], _input[2], _input[3], _input[4]);
   }
   function pushZKProofs(
     uint[2][] memory _a,
