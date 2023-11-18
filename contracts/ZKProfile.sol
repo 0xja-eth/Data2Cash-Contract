@@ -8,31 +8,30 @@ import "./IZKProfile.sol";
 
 contract ZKProfile is Governable, ERC721, EditionMetadataRenderer, IZKProfile {
 
-  bool public initialized = false;
-
-  uint256 supply;
-  IHydraS1Verifier hydraS1Verifier;
-
-  // ffffffffffffffffffff
-  uint256 public constant EMPTY_TOKEN_ID = 2 ** 80 - 1;
-
   // Define the struct for your NFT's metadata
   struct NFTMetadata {
     uint256 tokenId;
     address owner;
-    uint256[] cids;
+    uint256[] tagIds;
   }
 
-  // key: nullifier
-  mapping (uint256 => bool) isNullifierExpired;
+  bool public initialized = false;
+  IHydraS1Verifier public hydraS1Verifier;
 
-  // key: tokenId
-  mapping (uint256 => NFTMetadata) tokens;
+  // nullifier => isExpired
+  mapping (uint256 => bool) isNullifierExpired;
+  // tokenId => NFTMetadata
+  mapping (uint256 => NFTMetadata) public tokens;
+
+  // ffffffffffffffffffff
+  uint256 public constant EMPTY_TOKEN_ID = 2 ** 80 - 1;
+
+  uint256 public supply;
 
   event ZKProof(
-    address indexed to,
-    uint[2] a, uint[2][2] b, uint[2] c,
-    uint[5] input
+    address indexed _to,
+    uint[2] _a, uint[2][2] _b, uint[2] _c,
+    uint[5] _input
   );
 
   constructor() Governable() ERC721("ZKProfile", "ZKP") { }
@@ -43,11 +42,11 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer, IZKProfile {
   }
 
   function initialize(
-    address hydraS1Verifier_,
+    address _hydraS1Verifier,
     string memory _description,
     string memory _imageUrl,
     string memory _externalUrl) external beforeInitialized onlyGov {
-    hydraS1Verifier = IHydraS1Verifier(hydraS1Verifier_);
+    hydraS1Verifier = IHydraS1Verifier(_hydraS1Verifier);
 
     description = _description;
     imageUrl = _imageUrl;
@@ -55,7 +54,6 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer, IZKProfile {
 
     initialized = true;
   }
-
   function changeInfo(
     string memory _description,
     string memory _imageUrl,
@@ -66,80 +64,80 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer, IZKProfile {
     externalUrl = _externalUrl;
   }
 
-  function getTokenIdsByCid(uint256 cid) public view returns (uint256[] memory) {
-    uint256[] memory tokenIds = new uint256[](supply); // 假设供应量是合约的状态变量
-    uint256 count = 0;
-
-    for (uint256 i = 0; i < supply; i++) {
-      if (tokens[i].cids.length > 0) {
-        for (uint256 j = 0; j < tokens[i].cids.length; j++) {
-          if (tokens[i].cids[j] == cid) {
-            tokenIds[count] = i;
-            count++;
-            break;
-          }
-        }
-      }
-    }
-
-    // 调整数组大小以匹配实际找到的tokenId数量
-    uint256[] memory result = new uint256[](count);
-    for (uint256 k = 0; k < count; k++) {
-      result[k] = tokenIds[k];
-    }
-
-    return result;
-  }
+//  function getTokenIdsByCid(uint256 tagId) public view returns (uint256[] memory) {
+//    uint256[] memory tokenIds = new uint256[](supply); // 假设供应量是合约的状态变量
+//    uint256 count = 0;
+//
+//    for (uint256 i = 0; i < supply; i++) {
+//      if (tokens[i].tagIds.length > 0) {
+//        for (uint256 j = 0; j < tokens[i].tagIds.length; j++) {
+//          if (tokens[i].tagIds[j] == tagId) {
+//            tokenIds[count] = i;
+//            count++;
+//            break;
+//          }
+//        }
+//      }
+//    }
+//
+//    // 调整数组大小以匹配实际找到的tokenId数量
+//    uint256[] memory result = new uint256[](count);
+//    for (uint256 k = 0; k < count; k++) {
+//      result[k] = tokenIds[k];
+//    }
+//
+//    return result;
+//  }
 
   // Create a new NFT
   function pushZKProof(
-    uint[2] memory a,
-    uint[2][2] memory b,
-    uint[2] memory c,
-    uint[5] memory input
+    uint[2] memory _a,
+    uint[2][2] memory _b,
+    uint[2] memory _c,
+    uint[5] memory _input
   ) public {
     // check proof
-    require(!isNullifierExpired[input[4]], "Invalid Nullifier");
-    require(hydraS1Verifier.verifyProof(a, b, c, input), "Invalid Proof");
+    require(!isNullifierExpired[_input[4]], "Invalid Nullifier");
+    require(hydraS1Verifier.verifyProof(_a, _b, _c, _input), "Invalid Proof");
 
     // mint new token if tokenId
-    address mintTo = address(getMintTo(input[0]));
-    uint256 tokenId = getTokenId(input[0]);
+    address mintTo = address(getMintTo(_input[0]));
+    uint256 tokenId = getTokenId(_input[0]);
 
     if (tokenId == EMPTY_TOKEN_ID) { // 没有mint，但要二次确认
       tokenId = getTokenIdByAddress(mintTo);
       if (tokenId != EMPTY_TOKEN_ID)
-        tokens[tokenId].cids.push(input[3]);
+        tokens[tokenId].tagIds.push(_input[3]);
       else {
         // uint256 tokenId = nfts.length;
         _safeMint(mintTo, supply);
         tokenId = supply;
         tokens[supply].tokenId = tokenId;
         tokens[supply].owner = mintTo;
-        tokens[supply].cids.push(input[3]);
+        tokens[supply].tagIds.push(_input[3]);
 
         supply += 1;
       }
     } else {
       require(tokenId < supply, "Invalid TokenId");
-      tokens[tokenId].cids.push(input[3]);
+      tokens[tokenId].tagIds.push(_input[3]);
     }
 
-    isNullifierExpired[input[4]] = true;
+    isNullifierExpired[_input[4]] = true;
 
-    emit ZKProof(mintTo, a, b, c, input);
+    emit ZKProof(mintTo, _a, _b, _c, _input);
   }
   function pushZKProofs(
-    uint[2][] memory a,
-    uint[2][2][] memory b,
-    uint[2][] memory c,
-    uint[5][] memory input
+    uint[2][] memory _a,
+    uint[2][2][] memory _b,
+    uint[2][] memory _c,
+    uint[5][] memory _input
   ) external {
-    uint256 length = input.length;
-    require(a.length == length && b.length == length && c.length == length, "Invalid length");
+    uint256 length = _input.length;
+    require(_a.length == length && _b.length == length && _c.length == length, "Invalid length");
 
     for (uint256 i = 0; i < length; i++)
-      pushZKProof(a[i], b[i], c[i], input[i]);
+      pushZKProof(_a[i], _b[i], _c[i], _input[i]);
   }
 
   // Get the metadata of an NFT
@@ -148,40 +146,44 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer, IZKProfile {
     return tokens[_tokenId];
   }
 
-  function getMintTo(uint256 number) public pure returns (bytes20) {
-    // Shift the uint256 value to the right by 80 bits to get the last 20 bytes
-    bytes20 converted = bytes20(uint160(number >> 80));
-    return converted;
+  // Shift the uint256 value to the right by 80 bits to get the last 20 bytes
+  function getMintTo(uint256 _number) public pure returns (bytes20) {
+    return bytes20(uint160(_number >> 80));
+  }
+  // Define a mask with the desired bits set to 1
+  // Perform a bitwise AND with the mask to get the last 12 bytes
+  function getTokenId(uint256 _number) public pure returns (uint256) {
+    return _number & uint256(EMPTY_TOKEN_ID);
   }
 
-  function getTokenId(uint256 value) public pure returns (uint256) {
-    // Define a mask with the desired bits set to 1
-    uint256 mask = uint256(EMPTY_TOKEN_ID);
-
-    // Perform a bitwise AND with the mask to get the last 12 bytes
-    uint256 result = value & mask;
-
-    return result;
-  }
-
-  function getTokenIdByAddress(address owner) public view returns (uint256) {
+  function getTokenIdByAddress(address _owner) public view returns (uint256) {
     for (uint256 i = 0; i < supply; ++i)
-      if (tokens[i].owner == owner) return i;
+      if (tokens[i].owner == _owner) return i;
 
     return uint256(2 ** 80 - 1);
+  }
+
+  function verifyTag(address _owner, uint256 _tagId) public view returns (bool) {
+    for (uint256 i = 0; i < supply; ++i)
+      if (tokens[i].owner == _owner) {
+        for (uint256 j = 0; j < tokens[i].tagIds.length; ++j)
+          if (tokens[i].tagIds[j] == _tagId) return true;
+        return false;
+      }
+    return false;
   }
 
   /// @notice Get the base64-encoded json metadata for a token
   /// @param tokenId the token id to get the metadata for
   /// @return base64-encoded json metadata object
-  function tokenURI(uint256 tokenId) public view override returns (string memory) {
-    require(ownerOf(tokenId) != address(0), "No token");
+  function tokenURI(uint256 _tokenId) public view override returns (string memory) {
+    require(ownerOf(_tokenId) != address(0), "No token");
 
-    return createTokenMetadata(name(), tokenId, 0);
+    return createTokenMetadata(name(), _tokenId, 0);
   }
 
-  function calcPropertiesJson(uint256 tokenId) internal view override returns (string memory) {
-    uint256 len = tokens[tokenId].cids.length;
+  function calcPropertiesJson(uint256 _tokenId) internal view override returns (string memory) {
+    uint256 len = tokens[_tokenId].tagIds.length;
     uint256 lengthMinusOne = len - 1;
 
     string memory buffer = '';
@@ -190,8 +192,8 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer, IZKProfile {
       buffer = string.concat(
         buffer,
         stringifyStringAttribute(
-          "Credential",
-          LibString.toString(tokens[tokenId].cids[i])),
+          "Tag",
+          LibString.toString(tokens[_tokenId].tagIds[i])),
         ","
       );
 
@@ -202,8 +204,8 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer, IZKProfile {
     return string.concat(
       buffer,
       stringifyStringAttribute(
-        "Credential",
-        LibString.toString(tokens[tokenId].cids[lengthMinusOne]))
+        "Tag",
+        LibString.toString(tokens[_tokenId].tagIds[lengthMinusOne]))
     );
   }
 

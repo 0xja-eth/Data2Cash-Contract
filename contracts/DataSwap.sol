@@ -4,48 +4,94 @@ import "./Governable.sol";
 import "./IZKProfile.sol";
 
 contract DataSwap is Governable {
-  // user => (cid => count)
-  mapping (address => mapping (uint256 => uint256)) public buyRecords;
+
+  IZKProfile public zkProfile;
+
+  uint256 constant public MAX_COUNT = type(uint256).max;
+
+  // user => (key => value)
+  mapping (address => mapping (bytes32 => uint256)) public buyRecords;
+  // user => key[]
+  mapping (address => bytes32[]) public buyKeys;
+  // key => tagId[]
+  mapping (bytes32 => uint256[]) public keys;
   // cid => price
   mapping (uint256 => uint256) public tagPrices;
 
-  event Buy(address indexed _buyer, uint256 indexed _cid, uint256 _count, uint256 _value);
-  event Send(address indexed _sender, uint256 indexed _cid, string _title, string _content);
+  event Buy(address indexed _buyer, byte32 indexed _key, uint256 _value);
+  event Send(address indexed _sender, byte32 indexed _key, string _title, string _content);
 
-  constructor() Governable() { }
+  constructor(IZKProfile _zkProfile) Governable() {
+    zkProfile = _zkProfile;
+  }
 
+  function setupProfile(IZKProfile _zkProfile) external onlyGov {
+    zkProfile = _zkProfile;
+  }
   function setupPrice(uint256 cid, uint256 price) external onlyGov {
     tagPrices[cid] = price;
   }
 
-  function release(address payable[] memory _addresses, uint256 _cid) external onlyGov {
-    require(tagPrices[_cid] > 0, "DataSwap: tag not swappable");
-    require(address(this).balance >= tagPrices[_cid], "DataSwap: insufficient balance");
+  function release(address payable[] memory _addresses, bytes32 _key) external onlyGov {
+    uint256[] memory _tagIds = keys[_key];
 
-    uint256 benefit = tagPrices[_cid] / _addresses.length;
+    uint256 maxPrice = getPrice(_key);
+    require(maxPrice > 0, "DataSwap: invalid price");
+    require(address(this).balance >= maxPrice, "DataSwap: insufficient balance");
+
+    uint256 benefit = maxPrice / _addresses.length;
 
     for (uint256 i = 0; i < _addresses.length; i++)
       _addresses[i].transfer(benefit);
   }
 
-  function buy(uint256 _cid) external payable {
-    require(tagPrices[_cid] > 0, "DataSwap: tag not swappable");
-    require(msg.value >= tagPrices[_cid], "DataSwap: insufficient payment");
+  function getKey(uint256[] _tagIds) public view returns (bytes32 memory) {
+    return keccak256(abi.encodePacked(_tagIds));
+  }
+  function getPrice(bytes32 _key) public view returns (uint256) {
+    uint256[] memory _tagIds = keys[_key];
 
-    uint256 count = msg.value / tagPrices[_cid];
-
-    buyRecords[msg.sender][_cid] += count;
-
-    emit Buy(msg.sender, _cid, count, msg.value);
+    uint256 maxPrice = 0;
+    for (uint256 i = 0; i < _tagIds.length; i++) {
+      uint256 price = tagPrices[_tagIds[i]];
+      maxPrice = price > maxPrice ? price : maxPrice;
+    }
+    return maxPrice;
   }
 
-  function send(uint256 _cid, string memory _title, string memory _content) external {
-    require(buyRecords[msg.sender][_cid] > 0, "DataSwap: insufficient count");
-
-    buyRecords[msg.sender][_cid]--;
-
-    emit Send(msg.sender, _cid, _title, _content);
+  function sendCount(address _owner, bytes32 _key) public view returns (uint256) {
+    uint256 maxPrice = getPrice(_key);
+    if (maxPrice == 0) return MAX_COUNT;
+    return buyRecords[_owner][_key] / maxPrice;
   }
+
+  function buy(uint256[] _tagIds) external payable {
+    uint256 maxPrice = 0;
+    for (uint256 i = 0; i < _tagIds.length; i++) {
+      uint256 price = tagPrices[_tagIds[i]];
+      require(price > 0, "DataSwap: tag not swappable");
+
+      maxPrice = price > maxPrice ? price : maxPrice;
+    }
+    require(msg.value >= maxPrice, "DataSwap: insufficient payment");
+
+    bytes32 key = getKey(_tagIds);
+    keys[key] = _tagIds;
+    buyKeys[msg.sender].push(key);
+    buyRecords[msg.sender][key] += msg.value;
+
+    emit Buy(msg.sender, key, count, msg.value);
+  }
+
+  function send(bytes32 _key, string memory _title, string memory _content) external {
+    uint256 maxPrice = getPrice(_key);
+    require(buyRecords[msg.sender][_key] >= maxPrice, "DataSwap: insufficient count");
+
+    buyRecords[msg.sender][_key] -= maxPrice;
+
+    emit Send(msg.sender, _key, _title, _content);
+  }
+
 //  function getMaxCount(uint256 _cid) external view returns (uint256) {
 //    return zkProfile.getTokenIdsByCid(_cid).length;
 //  }
