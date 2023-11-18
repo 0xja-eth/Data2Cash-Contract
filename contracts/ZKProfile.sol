@@ -174,7 +174,7 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer, IZKProfile {
   }
 
   /// @notice Get the base64-encoded json metadata for a token
-  /// @param tokenId the token id to get the metadata for
+  /// @param _tokenId the token id to get the metadata for
   /// @return base64-encoded json metadata object
   function tokenURI(uint256 _tokenId) public view override returns (string memory) {
     require(ownerOf(_tokenId) != address(0), "No token");
@@ -209,13 +209,14 @@ contract ZKProfile is Governable, ERC721, EditionMetadataRenderer, IZKProfile {
     );
   }
 
-  //   function _transfer(
-  //     address from,
-  //     address to,
-  //     uint256 tokenId
-  //   ) internal override {
-  //     require(false, "SBT: SBT Can't Be Transferred");
-  //   }
+  function _transfer(
+   address from,
+   address to,
+   uint256 tokenId
+  ) internal override {
+   require(false, "SBT: SBT Can't Be Transferred");
+  }
+
   //   function addProperty(uint256 tokenId, string memory name, string memory value) private {
   //     properties[tokenId].push(Attribute({
   //       name: name, value: value

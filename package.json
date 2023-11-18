@@ -2,10 +2,13 @@
   "name": "hardhat-project",
   "scripts": {
     "compile": "npx hardhat compile",
+    
     "deploy": "npx hardhat run scripts/deployZKProfile.ts --no-compile",
+    "deploy-data2-swap": "npx hardhat run scripts/deployData2Swap.ts --no-compile",
+
     "push-zkproof": "npx hardhat run scripts/pushZKProof.ts --no-compile",
     "test-verifier": "npx hardhat run scripts/testVerifier.ts --no-compile",
-    "deploy-data-swap": "npx hardhat run scripts/deployDataSwap.ts --no-compile",
+
     "buy-data": "npx hardhat run scripts/buyData.ts --no-compile",
     "send-data": "npx hardhat run scripts/sendData.ts --no-compile",
     "release-token": "npx hardhat run scripts/releaseToken.ts --no-compile",

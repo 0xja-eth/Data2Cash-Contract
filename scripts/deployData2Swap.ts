@@ -1,6 +1,6 @@
 import dotenv from "dotenv"
 import hre from "hardhat";
-import deployDataSwap from "../deploy/deployDataSwap";
+import deployDataSwap from "../deploy/deployData2Swap";
 
 dotenv.config();
 

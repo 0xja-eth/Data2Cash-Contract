@@ -14,10 +14,10 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   const [hydraS1Verifier, isNew1] = await makeContract("HydraS1Verifier");
 
-  const [zkProfile, isNew2] = await makeContract("ZKProfile", isNew1 || forceDeployZKProfile);
-  const [proxy, isNew3] = await makeContract("ZKProfileProxy", [
-    zkProfile.address, "0x" // callCode
-  ]);
+  const [zkProfile, isNew2] = await makeContract("ZKProfile",
+    isNew1 || forceDeployZKProfile);
+  const [proxy, isNew3] = await makeContract("ZKProfileProxy",
+    [zkProfile.address, "0x"]); // callCode
 
   if (!isNew3 && isNew2)
     await sendTx(proxy.upgradeTo(zkProfile.address), "proxy.upgradeTo")
